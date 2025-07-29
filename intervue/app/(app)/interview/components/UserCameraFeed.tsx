@@ -1,0 +1,65 @@
+'use client';
+
+import React, { useEffect, useRef } from 'react';
+
+interface UserCameraFeedProps {
+  className?: string;
+  muted?: boolean;
+  playing?: boolean;
+}
+
+export default function UserCameraFeed({ className, muted = true, playing = true }: UserCameraFeedProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null); // store stream
+
+  useEffect(() => {
+    const startCamera = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user' },
+          audio: false,
+        });
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (err) {
+        console.error('Error accessing front camera:', err);
+      }
+    };
+
+    if (playing) {
+      startCamera();
+    } else {
+      // ❌ Stop camera when playing is false
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+        if (videoRef.current) {
+          videoRef.current.srcObject = null;
+        }
+      }
+    }
+
+    return () => {
+      // ❌ Cleanup on unmount
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+        if (videoRef.current) {
+          videoRef.current.srcObject = null;
+        }
+      }
+    };
+  }, [playing]);
+
+  return (
+    <video
+      ref={videoRef}
+      className={className}
+      muted={muted}
+      playsInline
+      autoPlay
+    />
+  );
+}
