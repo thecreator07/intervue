@@ -1,6 +1,6 @@
 import { WebSocketServer, WebSocket } from "ws";
 import http from "node:http";
-import { convertMessagesToQA, getAIResponseStream, startPingCheck, startSessionTimeout } from "./helper";
+import { convertMessagesToQA, getAIResponseStream, startPingCheck, startSessionTimeout } from "./helper.js";
 import { Message } from "./types";
 import { parse } from "node:url";
 const port = 5000;
