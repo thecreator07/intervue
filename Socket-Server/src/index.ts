@@ -1,15 +1,15 @@
 import { WebSocketServer, WebSocket } from "ws";
-import http from "http";
+import http from "node:http";
 import { convertMessagesToQA, getAIResponseStream, startPingCheck, startSessionTimeout } from "./helper";
 import { Message } from "./types";
-import { parse } from "url";
+import { parse } from "node:url";
 const port = 5000;
 const server = http.createServer();
 const wss = new WebSocketServer({ server });
 const sessions = new Map<string, Message[]>();
 const readySessions = new Set<string>(); // <-- Track if context is loaded
 
-wss.on("connection", (ws: WebSocket, req) => {
+wss.on("connection", (ws: WebSocket, req: http.IncomingMessage) => {
   const { query } = parse(req.url || "", true);
   const sessionId = (query?.["session"] as string) || crypto.randomUUID();
 
@@ -99,8 +99,9 @@ Rules:
       } else {
         console.log("✅ Conversation saved to database.");
       }
-    } catch (error) {
-      console.error("❌ Error sending conversation to API:", error);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("❌ Error sending conversation to API:", errorMessage);
     } finally {
       clearInterval(PingCheck);
       clearTimeout(sessiontimeout);

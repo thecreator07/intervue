@@ -1,5 +1,5 @@
 import { OpenAI } from 'openai';
-import { Message, Messagedata } from "./types";
+import { Message} from "./types";
 import { WebSocket as WsWebSocket } from 'ws';
 import dotenv from 'dotenv';
 dotenv.config();
