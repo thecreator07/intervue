@@ -5,6 +5,8 @@ import SessionModel, { Messagedata } from "@/models/session.model";
 import { isValidObjectId } from "@/lib/Validid";
 import { openai } from "@/lib/OpenAI";
 import { systemPrompts } from "@/lib/prompt";
+import EvaluationModel, { SummaryEvaluation } from "@/models/evaluation.model";
+import { _success } from "zod/v4/core";
 
 export async function POST(req: NextRequest) {
     await dbConnect();
@@ -40,9 +42,10 @@ export async function POST(req: NextRequest) {
     }
 }
 
+
 export async function PUT(req: NextRequest) {
     await dbConnect();
-
+    const session = await getServerSession();
     try {
         const { sessionId } = await req.json();
 
@@ -71,37 +74,69 @@ export async function PUT(req: NextRequest) {
                 { status: 404 }
             );
         }
-        // const conversation: Messagedata[] = [];
-        TotalQA.forEach(async (qa) => {
-            for (const qa of TotalQA) {
-                const { question, answer } = qa;
 
-                if (!question || !answer) {
-                    continue; // Skip if question or answer is missing
-                }
-
-                const ResultWithRatingAndFeedback = await openai.chat.completions.create({
-                    model: 'gemini-2.0-flash',
-                    messages: [
-                        { role: "system", content: systemPrompts.rateAndfeedback },
-                        { role: "user", content: `Q: ${question}\nA: ${answer}` }
-                    ]
-                })
-
-                return JSON.stringify(ResultWithRatingAndFeedback.choices[0].message.content);
-
-            }
+        // Prepare the Q&A text for AI evaluation
+        const QAndAText = TotalQA.map((qa, idx) => `Q${idx + 1}: ${qa.question}\nA${idx + 1}: ${qa.answer}`).join('\n\n');
+        // inserting AI based evaluation
+        const ResultWithRatingAndFeedback = await openai.chat.completions.create({
+            model: 'gemini-2.0-flash',
+            messages: [
+                { role: "system", content: systemPrompts.rateAndfeedback },
+                { role: "user", content: QAndAText }
+            ], response_format: { type: "json_object" },
         })
-        // After processing, update the conversation in the database
+        const result = ResultWithRatingAndFeedback.choices[0].message.content;
+        if (!result) {
+            return NextResponse.json(
+                { success: false, message: "No feedback returned from AI" },
+                { status: 500 }
+            );
+        }
+
+        // processing conversation data to extract summary
+        const conversationWithRatingAndFeedback = JSON.parse(result).map((qa: Messagedata, idx: number) => `Q${idx + 1}: ${qa.question}\nA${idx + 1}: ${qa.answer}\nR ${qa.rating}\nF ${qa.feedback}`).join('\n\n');
+        const summary = await openai.chat.completions.create({
+            model: 'gemini-2.0-flash',
+            messages: [
+                { role: "system", content: systemPrompts.Summary },
+                { role: "user", content: `Summarize the following conversation:\n\n${conversationWithRatingAndFeedback}` }
+            ]
+        })
+
+        // console.log("Summary:", summary.choices[0].message.content)
+
+        const evaluationData = await openai.chat.completions.create({
+            model: 'gemini-2.0-flash',
+            messages: [
+                { role: "system", content: systemPrompts.Evaluator },
+                { role: "user", content: `Evaluate the following conversation:\n\n${conversationWithRatingAndFeedback}` }
+            ], response_format: { type: "json_object" }
+        })
+
+        const wholeEvaluation = evaluationData.choices[0].message.content
+        if (!wholeEvaluation) {
+            return NextResponse.json(
+                { success: false, message: "No evauation returned" }
+            )
+        }
+        const parsedData = JSON.parse(wholeEvaluation);
+
+        await EvaluationModel.create({
+            sessionId,
+            ...parsedData
+        });
+
         await SessionModel.updateOne(
             { _id: sessionId },
-            { 
-            $set: { 
-                conversation: TotalQA,
-                evaluation: true
-            } 
+            {
+                $set: {
+                    conversation: JSON.parse(result),
+                    evaluation: false,
+                    summary: summary.choices[0].message.content
+                }
             }
         );
+
         return NextResponse.json({
             success: true,
             evaluation: true

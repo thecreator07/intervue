@@ -15,7 +15,7 @@ export default function VideoScreen({ streaming, playing }: CallScreenProps) {
       {/* AI Video */}
       <div className="relative m-2 bg-black flex items-center justify-center h-1/2 rounded overflow-hidden">
         <div className="text-white text-xl">
-          🎙️ {streaming ? "AI Speaker" : "Ai Idle"}
+          🎙️ {streaming ? "AI  Speaker" : "AI Idle"}
         </div>
 
         <video

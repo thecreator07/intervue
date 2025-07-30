@@ -88,7 +88,7 @@ export async function GET() {
         if (!session || session.length === 0) {
             return NextResponse.json({ message: "Sessions not found" }, { status: 404 });
         }
-        console.log(session)
+        // console.log(session)
         return NextResponse.json({ success: true, message: "All sessions found", data: session }, { status: 200 });
     } catch (error: unknown) {
         let errorMessage = "Failed to fetch sessions";

@@ -5,7 +5,7 @@ export interface Messagedata extends Document {
     question: string
     answer: string
     rating?: string
-    guideline?: string
+    feedback?: string
 }
 
 
@@ -13,7 +13,7 @@ const MessageSchema: Schema<Messagedata> = new mongoose.Schema({
     question: { type: String },
     answer: { type: String },
     rating: { type: String, },
-    guideline: { type: String },
+    feedback: { type: String },
 },{timestamps:true});
 
 export interface SessionData extends mongoose.Document {
