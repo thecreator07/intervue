@@ -11,10 +11,9 @@
     "start": "nodemon server.js"
   },
   "dependencies": {
+    "ws": "^8.18.3",
     "axios": "^1.11.0",
     "dotenv": "^17.2.1",
-    "node-fetch": "^3.3.2",
-    "openai": "^5.11.0",
-    "ws": "^8.18.3"
+    "openai": "^5.11.0"
   }
 }
