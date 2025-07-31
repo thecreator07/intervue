@@ -13,7 +13,7 @@ const {
     startSessionTimeout,
 } = require("./helper");
 
-const port = process.env.PORT || 10000;
+const port = process.env.PORT
 const server = http.createServer();
 const wss = new WebSocketServer({ server });
 const BASE_API_URL = process.env.API_URL || "https://intervue-9bi1ez38q-thecreator07s-projects.vercel.app/";
