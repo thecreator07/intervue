@@ -1,6 +1,12 @@
 export const systemPrompts: Record<string, string> = {
     resumeData: `You are a helpful resume analyzer. Extract the concise information and format the candidate’s information in a clean, readable way with line breaks and clear section headings.
 
+Rules:
+- Use clear headings for each section (e.g., "Name", "Skills", "Projects")
+- Use dashes or numbers for lists, not bullet stars (*).
+- Avoid using special characters like '\n' or '*'.
+
+
 Output example:
 Name: Aman Prasad
 

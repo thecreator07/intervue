@@ -17,7 +17,7 @@ const port = process.env.PORT
 const server = http.createServer();
 const wss = new WebSocketServer({ server });
 const BASE_API_URL = process.env.API_URL || "https://intervue-eta.vercel.app/";
-
+// BASE_API_URL = "http://localhost:3000"
 const sessions = new Map();
 const readySessions = new Set();
 
@@ -31,34 +31,36 @@ wss.on("connection", async (ws, req) => {
     // Ensure the session is initialized before any async call
     sessions.set(sessionId, []);
     console.log(`Client connected with session ID: ${sessionId}`);
+    (async () => {
 
-    try {
-        const apiUrl = `${BASE_API_URL}/api/session/context?sessionId=${sessionId}`;
-        const res = await axios.get(apiUrl);
-        const data = res.data;
-        // console.log(data)
-        if (!data?.context) {
-            ws.send("❌ Failed to load context. Closing connection.");
-            ws.close();
-            return;
-        }
 
-        // Fetch again after async (sessions could've been cleared)
-        const history = sessions.get(sessionId);
-        if (!history) {
-            console.error("❌ Session history not found after context fetch.");
-            ws.send("❌ Session error. Closing connection.");
-            ws.close();
-            return;
-        }
-        // console.log(history);
-        history.push({
-            role: "system",
-            content: `You are an AI assistant acting as an expert interviewer. Based on the provided content: ${data.context}, you will ask relevant interview questions.
+        try {
+            const apiUrl = `${BASE_API_URL}/api/session/context?sessionId=${sessionId}`;
+            const res = await axios.get(apiUrl);
+            const data = res.data;
+            // console.log(data)
+            if (!data?.context) {
+                ws.send("❌ Failed to load context. Closing connection.");
+                ws.close();
+                return;
+            }
 
-1. Ask one interview question at a time related to the provided content.
-2. Wait for the user's answer
+            // Fetch again after async (sessions could've been cleared)
+            const history = sessions.get(sessionId);
+            if (!history) {
+                console.error("❌ Session history not found after context fetch.");
+                ws.send("❌ Session error. Closing connection.");
+                ws.close();
+                return;
+            }
+            // console.log(history);
+            history.push({
+                role: "system",
+                content: `You are an AI assistant acting as an expert interviewer. Based on the provided content: ${data.context}, you will ask relevant interview questions.
 
+            1. Ask one interview question at a time related to the provided content.
+            2. Wait for the user's answer
+            
 Rules:
 - always start interview with introduction question.
 - if user answer is not related to question, you have to ask question again.
@@ -66,19 +68,20 @@ Rules:
 - Ask question every time unless 5 questions have been asked.
 - end the interview with a closing greeting.
 `
-        });
+            });
 
-        sessions.set(sessionId, history);console.log(history)
-        readySessions.add(sessionId);
-        ws.send("__INTERVIEW_READY__");
+            sessions.set(sessionId, history); console.log(history)
+            readySessions.add(sessionId);
+            ws.send("__INTERVIEW_READY__");
 
-    } catch (error) {
-        console.error("❌ Failed to fetch context:", error.message || error);
-        ws.send("❌ Failed to fetch context. Closing connection.");
-        ws.close();
-        return;
-    }
+        } catch (error) {
+            console.error("❌ Failed to fetch context:", error.message || error);
+            ws.send("❌ Failed to fetch context. Closing connection.");
+            ws.close();
+            return;
+        }
 
+    })()
     // Message handler here...
 
     // Message handler after context is successfully loaded
@@ -91,10 +94,11 @@ Rules:
         }
 
         const history = sessions.get(sessionId);
-        console.log(history)
+        // console.log(history)
         history.push({ role: "user", content: msg || "start" });
 
         const aiReply = await getAIResponseStream(history, ws);
+        // console.log(aiReply)
         history.push({ role: "assistant", content: aiReply || "" });
         sessions.set(sessionId, history);
     });
