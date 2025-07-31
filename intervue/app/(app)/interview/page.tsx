@@ -160,7 +160,7 @@ export default function Page() {
     <>
       <div className="max-w-5xl mx-auto p-6">
         <h1 className="scroll-m-20 border-b whitespace-pre-line pb-2 text-center text-4xl font-extrabold  tracking-tight lg:text-5xl">
-         {" ProPrep \n AI\n **interviews**"}
+         Intervue
         </h1>
         <section className="flex-col justify-between mt-5">
           <div className="flex items-center justify-between">
