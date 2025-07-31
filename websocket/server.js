@@ -16,6 +16,7 @@ const {
 const port = process.env.PORT || 10000;
 const server = http.createServer();
 const wss = new WebSocketServer({ server });
+const BASE_API_URL = process.env.API_URL || "https://intervue-9bi1ez38q-thecreator07s-projects.vercel.app/";
 
 const sessions = new Map();
 const readySessions = new Set();
@@ -32,7 +33,7 @@ wss.on("connection", async (ws, req) => {
     console.log(`Client connected with session ID: ${sessionId}`);
 
     try {
-        const apiUrl = `http://localhost:3000/api/session/context?sessionId=${sessionId}`;
+        const apiUrl = `${BASE_API_URL}/api/session/context?sessionId=${sessionId}`;
         const res = await axios.get(apiUrl);
         const data = res.data;
         // console.log(data)
@@ -103,7 +104,7 @@ Rules:
         const messages = convertMessagesToQA(history);
 
         try {
-            const response = await axios.post("http://localhost:3000/api/conversation", {
+            const response = await axios.post(`${BASE_API_URL}/api/conversation`, {
                 sessionId,
                 conversation: messages,
             });
