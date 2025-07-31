@@ -30,7 +30,7 @@ wss.on("connection", async (ws, req) => {
 
     // Ensure the session is initialized before any async call
     sessions.set(sessionId, []);
-    console.log(`Client connected with session ID: ${sessionId}`);
+    // console.log(`Client connected with session ID: ${sessionId}`);
     (async () => {
 
 
@@ -40,7 +40,7 @@ wss.on("connection", async (ws, req) => {
             const data = res.data;
             // console.log(data)
             if (!data?.context) {
-                ws.send("❌ Failed to load context. Closing connection.");
+                ws.send("Failed to load context. Closing connection.");
                 ws.close();
                 return;
             }
@@ -48,8 +48,8 @@ wss.on("connection", async (ws, req) => {
             // Fetch again after async (sessions could've been cleared)
             const history = sessions.get(sessionId);
             if (!history) {
-                console.error("❌ Session history not found after context fetch.");
-                ws.send("❌ Session error. Closing connection.");
+                console.error("Session history not found after context fetch.");
+                ws.send("Session error. Closing connection.");
                 ws.close();
                 return;
             }
@@ -75,8 +75,8 @@ Rules:
             ws.send("__INTERVIEW_READY__");
 
         } catch (error) {
-            console.error("❌ Failed to fetch context:", error.message || error);
-            ws.send("❌ Failed to fetch context. Closing connection.");
+            console.error("Failed to fetch context:", error.message || error);
+            ws.send("Failed to fetch context. Closing connection.");
             ws.close();
             return;
         }
@@ -115,7 +115,7 @@ Rules:
 
             console.log("✅ Conversation saved to database.");
         } catch (error) {
-            console.error("❌ Error sending conversation to API:", error.message || error);
+            console.error("Error sending conversation to API:", error.message || error);
         } finally {
             clearInterval(PingCheck);
             clearTimeout(sessionTimeout);

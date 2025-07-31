@@ -36,15 +36,15 @@ wss.on("connection", (ws: WebSocket, req: http.IncomingMessage) => {
               role: "system",
               content: `You are an AI assistant acting as an expert interviewer. Based on the provided content: ${data.context}, you will ask relevant interview questions.
 
-1. Ask one interview question at a time related to the provided content.
-2. Wait for the user's answer
+              2. Wait for the user's answer
+              1. Ask one interview question at a time related to the provided content.
 
-Rules:
-- always start interview with introduction question.
-- if user answer is not related to question, you have to ask question again.
-- ask medium to high level question with whole content context.
-- Ask question every time unless 5 questions have been asked.
-- end the interview with a closing greeting.
+              Rules:
+              - always start interview with introduction question.
+              - if user answer is not related to question, you have to ask question again.
+              - ask medium to high level question with whole content context.
+              - Ask question every time unless 5 questions have been asked.
+              - end the interview with a closing greeting.
 `
             });
             sessions.set(sessionId, history);
