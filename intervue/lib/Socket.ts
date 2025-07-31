@@ -1,7 +1,7 @@
 let socket: WebSocket;
 
 export function connectSocket(session: string) {
-  socket = new WebSocket(`ws://localhost:5000?session=${session}`);
+  socket = new WebSocket(`https://intervue-hq0w.onrender.com?session=${session}`);
 
   socket.onopen = () => {
     console.log("Connected to AI server");
