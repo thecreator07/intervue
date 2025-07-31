@@ -119,7 +119,7 @@ export default function ChatPage() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          placeholder="Ask your question..."
+          placeholder="Write Your Message..."
           className="mt-4 border p-2 rounded"
         />
       </section>

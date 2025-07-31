@@ -130,7 +130,7 @@ export async function PUT(req: NextRequest) {
             {
                 $set: {
                     conversation: JSON.parse(result),
-                    evaluation: false,
+                    evaluation: true,
                     summary: summary.choices[0].message.content
                 }
             }
