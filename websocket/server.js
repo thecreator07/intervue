@@ -3,6 +3,8 @@ const http = require("http");
 const { parse } = require("url");
 const crypto = require("crypto");
 const axios = require("axios");
+const dotenv = require('dotenv');
+dotenv.config();
 
 const {
     convertMessagesToQA,
@@ -11,7 +13,7 @@ const {
     startSessionTimeout,
 } = require("./helper");
 
-const port = 5000;
+const port = process.env.PORT||10000;
 const server = http.createServer();
 const wss = new WebSocketServer({ server });
 
