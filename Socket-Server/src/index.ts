@@ -1,6 +1,6 @@
 import { WebSocketServer, WebSocket } from "ws";
 import http from "node:http";
-import { convertMessagesToQA, getAIResponseStream, startPingCheck, startSessionTimeout } from "./helper.js";
+import { convertMessagesToQA, getAIResponseStream, startPingCheck, startSessionTimeout } from "./helper";
 import { Message } from "./types";
 import { parse } from "node:url";
 const port = 5000;
@@ -25,7 +25,7 @@ wss.on("connection", (ws: WebSocket, req: http.IncomingMessage) => {
       const res = await fetch(apiUrl, { method: "GET" });
 
       if (res.ok) {
-        const data = await res.json();
+        const data = await res.json() as { context?: string };
 
         if (data?.context) {
           // Prevent adding system prompt twice
@@ -58,8 +58,9 @@ Rules:
       } else {
         console.error("Failed to fetch context:", await res.text());
       }
-    } catch (err) {
-      console.error("Error fetching context:", err);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("Error sending :", errorMessage);
     }
   })();
 

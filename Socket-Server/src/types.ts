@@ -1,3 +1,5 @@
+
+
 export type Role = "system" | "assistant" | "user";
 
 export interface Message {
@@ -6,7 +8,7 @@ export interface Message {
 }
 
 
-export interface Messagedata extends Document {
+export interface Messagedata {
     question: string
     answer: string
     rating?: string
