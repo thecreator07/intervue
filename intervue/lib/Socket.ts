@@ -1,7 +1,8 @@
 let socket: WebSocket;
 
 export function connectSocket(session: string) {
-  socket = new WebSocket(`ws://localhost:10000?session=${session}`);
+  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+  socket = new WebSocket(`${protocol}://intervue-hq0w.onrender.com?session=${session}`);
 
   socket.onopen = () => {
     console.log("Connected to AI server");
