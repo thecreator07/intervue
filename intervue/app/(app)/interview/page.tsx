@@ -145,8 +145,12 @@ export default function Page() {
 
       toast.success("Session evaluated successfully");
       fetchInterviews(); // refresh sessions list
-    } catch (err: any) {
-      toast.error(`Eval error: ${err.message}`);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error(`Eval error: ${err.message}`);
+      } else {
+        toast.error("Eval error: Unknown error");
+      }
     } finally {
       setEvaluating(null);
     }

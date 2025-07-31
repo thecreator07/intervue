@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+// import { getServerSession } from "next-auth";
 import dbConnect from "@/db";
 import SessionModel, { Messagedata } from "@/models/session.model";
 import { isValidObjectId } from "@/lib/Validid";
 import { openai } from "@/lib/OpenAI";
 import { systemPrompts } from "@/lib/prompt";
-import EvaluationModel, { SummaryEvaluation } from "@/models/evaluation.model";
-import { _success } from "zod/v4/core";
+import EvaluationModel from "@/models/evaluation.model";
 
 export async function POST(req: NextRequest) {
     await dbConnect();
@@ -45,7 +44,7 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
     await dbConnect();
-    const session = await getServerSession();
+    // const session = await getServerSession();
     try {
         const { sessionId } = await req.json();
 

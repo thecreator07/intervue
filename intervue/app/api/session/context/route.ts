@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+// import { getServerSession } from 'next-auth';
 import dbConnect from '@/db';
-import { authOptions } from '../../auth/[...nextauth]/options';
+// import { authOptions } from '../../auth/[...nextauth]/options';
 import SessionModel from '@/models/session.model';
 // import { authOptions } from '@/app/api/auth/[...nextauth]/authOptions';
 // import { SessionModel } from '@/models/SessionModel';

@@ -52,7 +52,7 @@ export default function ChatPage() {
     };
 
     return () => socket.close(); // clean up on unmount
-  }, []);
+  }, [sessionId]);
 
   const handleSend = () => {
     if (!input.trim()) return;

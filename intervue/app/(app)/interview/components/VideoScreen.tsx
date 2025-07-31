@@ -35,7 +35,7 @@ export default function VideoScreen({ streaming, playing }: CallScreenProps) {
         {/* Video source */}
         <UserCameraFeed
           className="absolute inset-0 object-cover w-full h-full transform -scale-x-100"
-          playing={true}
+          playing={playing}
         />
       </div>
     </div>

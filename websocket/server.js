@@ -13,7 +13,7 @@ const {
     startSessionTimeout,
 } = require("./helper");
 
-const port = process.env.PORT||10000;
+const port = process.env.PORT || 10000;
 const server = http.createServer();
 const wss = new WebSocketServer({ server });
 
@@ -35,7 +35,7 @@ wss.on("connection", async (ws, req) => {
         const apiUrl = `http://localhost:3000/api/session/context?sessionId=${sessionId}`;
         const res = await axios.get(apiUrl);
         const data = res.data;
-
+        // console.log(data)
         if (!data?.context) {
             ws.send("❌ Failed to load context. Closing connection.");
             ws.close();
@@ -50,7 +50,7 @@ wss.on("connection", async (ws, req) => {
             ws.close();
             return;
         }
-
+        // console.log(history);
         history.push({
             role: "system",
             content: `You are an AI assistant acting as an expert interviewer. Based on the provided content: ${data.context}, you will ask relevant interview questions.
@@ -67,7 +67,7 @@ Rules:
 `
         });
 
-        sessions.set(sessionId, history);
+        sessions.set(sessionId, history);console.log(history)
         readySessions.add(sessionId);
         ws.send("__INTERVIEW_READY__");
 
@@ -90,6 +90,7 @@ Rules:
         }
 
         const history = sessions.get(sessionId);
+        console.log(history)
         history.push({ role: "user", content: msg || "start" });
 
         const aiReply = await getAIResponseStream(history, ws);
