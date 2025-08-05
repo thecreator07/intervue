@@ -49,7 +49,7 @@ export default function ChatPage() {
       if (input.trim() && !streaming) {
         handleSend();
       }
-    }, 5000); // 5 seconds
+    }, 2000); // 5 seconds
 
     return () => {
       if (sendTimeoutRef.current) {
