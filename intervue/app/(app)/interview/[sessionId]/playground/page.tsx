@@ -276,13 +276,9 @@ export default function ChatPage() {
   }, [messages]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (transcript && !streaming && transcript !== input) {
+    if (transcript && !streaming && transcript !== input) {
         setInput(transcript);
       }
-    }, 300); // 300ms debounce
-
-    return () => clearTimeout(timer);
   }, [transcript, streaming, input]);
 
 
