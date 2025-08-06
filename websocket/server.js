@@ -17,8 +17,8 @@ const {
 const port = process.env.PORT;
 const server = http.createServer();
 const wss = new WebSocketServer({ server });
-// const BASE_API_URL = process.env.API_URL || "https://intervue-eta.vercel.app/";
-BASE_API_URL = "http://localhost:3000"
+const BASE_API_URL = process.env.API_URL || "https://intervue-eta.vercel.app/";
+// BASE_API_URL = "http://localhost:3000"
 const sessions = new Map();
 const sessionStates = new Map(); // Track session loading states
 
