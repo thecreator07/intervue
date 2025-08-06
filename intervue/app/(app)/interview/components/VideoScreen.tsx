@@ -17,14 +17,7 @@ export default function VideoScreen({ streaming, playing }: CallScreenProps) {
           🎙️ {streaming ? "AI Speaker" : "AI Idle"}
         </div>
 
-        <video
-          className="absolute inset-0 object-cover w-full h-full"
-          muted
-          playsInline
-          autoPlay
-        >
-          {/* Video source */}
-        </video>
+        
       </div>
 
       {/* User Video */}

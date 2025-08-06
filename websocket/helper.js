@@ -113,7 +113,7 @@ const ttsClient = new textToSpeech.TextToSpeechClient({
   projectId: process.env.PROJECT_ID,
 });
 
-console.log(process.env.PROJECT_ID, process.env.CLIENT_EMAIL, process.env.PRIVATE_KEY);
+// console.log(process.env.PROJECT_ID, process.env.CLIENT_EMAIL, process.env.PRIVATE_KEY);
 async function getAIResponseStream(sessionMessages, ws) {
   try {
     const stream = await client.chat.completions.create({

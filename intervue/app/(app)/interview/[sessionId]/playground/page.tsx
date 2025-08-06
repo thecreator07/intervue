@@ -35,149 +35,178 @@ export default function ChatPage() {
   }, [browserSupportsSpeechRecognition]);
   useEffect(() => {
     if (!transcript) return;
-
-    // Update last speech time whenever transcript changes
-    setLastSpeechTime(Date.now());
-    console.log(lastSpeechTime, "lastSpeechTime");
-    // Clear any existing timeout
+    
+    const now = Date.now();
+    setLastSpeechTime(now);
+    
     if (sendTimeoutRef.current) {
-      clearTimeout(sendTimeoutRef.current);
-    }
-
-    // Set new timeout to send after 5 seconds of silence
-    sendTimeoutRef.current = setTimeout(() => {
-      if (input.trim() && !streaming) {
-        handleSend();
-      }
-    }, 2000); // 5 seconds
-
-    return () => {
-      if (sendTimeoutRef.current) {
         clearTimeout(sendTimeoutRef.current);
-      }
+    }
+    
+    // Only update input if not streaming and no manual input
+    if (!streaming && !input) {
+        setInput(transcript);
+    }
+    
+    sendTimeoutRef.current = setTimeout(() => {
+        if (!streaming && transcript.trim()) {
+            handleSend();
+        }
+    }, 3000);
+    
+    return () => {
+        if (sendTimeoutRef.current) {
+            clearTimeout(sendTimeoutRef.current);
+        }
     };
-  }, [transcript]);
+}, [transcript, streaming]);
+
+
   useEffect(() => {
-    const socket = connectSocket(sessionId);
-    socketRef.current = socket;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 5;
+    let reconnectTimer: NodeJS.Timeout;
 
-    socket.binaryType = "arraybuffer";
+    const connect = () => {
+      const socket = connectSocket(sessionId);
+      socketRef.current = socket;
+      socket.binaryType = "arraybuffer";
 
-    socket.onmessage = (event) => {
-      if (typeof event.data === "string") {
-        console.log("eventdata", event.type, event.data);
-        try {
-          const msg = JSON.parse(event.data);
-          console.log("message", msg);
-          if (msg.type === "text") {
-            const chunk = msg.data;
+      socket.onopen = () => {
+        reconnectAttempts = 0;
+        setPlaying(true);
+      };
 
-            if (chunk === "__INTERVIEW_READY__") {
-              sendMessage("start");
-              return;
-            }
-
-            if (chunk === "[DONE]") {
-              setStreaming(false);
-              aiMessageRef.current = "";
-            } else {
-              setStreaming(true);
-              aiMessageRef.current += chunk;
-              setMessages((prev) => {
-                if (
-                  prev.length === 0 ||
-                  prev[prev.length - 1].startsWith("🧑‍💻")
-                ) {
-                  return [...prev, aiMessageRef.current];
-                } else {
-                  const updated = [...prev];
-                  updated[updated.length - 1] = aiMessageRef.current;
-                  return updated;
-                }
-              });
-            }
-          } else if (msg.type === "error") {
-            console.error("LLM Error:", msg.data);
-          }
-        } catch (err: unknown) {
-          console.warn(
-            "Non-JSON message:",
-            err instanceof Error ? event.data : err
-          );
-        }
-      } else {
-        console.log(messages[messages.length - 1]);
-        console.log("Received binary", event.data.byteLength);
-        const blob = new Blob([event.data], { type: "audio/mpeg" });
-        const audioUrl = URL.createObjectURL(blob);
-
-        // Stop speech recognition before playing audio
-        SpeechRecognition.stopListening().catch((err: unknown) =>
-          console.error(
-            "Error stopping recognition:",
-            err instanceof Error ? err.message : err
-          )
-        );
-
-        // Initialize or update audio element
-        if (!audioRef.current) {
-          audioRef.current = new Audio(audioUrl);
+      socket.onclose = () => {
+        setStreaming(false);
+        if (reconnectAttempts < maxReconnectAttempts) {
+          reconnectTimer = setTimeout(() => {
+            reconnectAttempts++;
+            connect();
+          }, Math.min(1000 * reconnectAttempts, 5000)); // Exponential backoff
         } else {
-          audioRef.current.src = audioUrl;
+          setPlaying(false);
+          SpeechRecognition.stopListening();
         }
+      };
 
-        // Clean up previous event listeners to avoid duplicates
-        audioRef.current.onended = null;
-        audioRef.current.onerror = null;
+      socket.onmessage = (event) => {
+        if (typeof event.data === "string") {
+          console.log("eventdata", event.type, event.data);
+          try {
+            const msg = JSON.parse(event.data);
+            console.log("message", msg);
+            if (msg.type === "text") {
+              const chunk = msg.data;
 
-        // Set up new event listeners
-        audioRef.current.onended = () => {
-          console.log("Audio playback finished");
-          if (!streaming) {
-            SpeechRecognition.startListening({ continuous: true }).catch(
-              (err: unknown) =>
-                console.error(
-                  "Error starting recognition:",
-                  err instanceof Error ? err.message : err
-                )
+              if (chunk === "__INTERVIEW_READY__") {
+                sendMessage("start");
+                return;
+              }
+
+              if (chunk === "[DONE]") {
+                setStreaming(false);
+                aiMessageRef.current = "";
+              } else {
+                setStreaming(true);
+                aiMessageRef.current += chunk;
+                setMessages((prev) => {
+                  if (
+                    prev.length === 0 ||
+                    prev[prev.length - 1].startsWith("🧑‍💻")
+                  ) {
+                    return [...prev, aiMessageRef.current];
+                  } else {
+                    const updated = [...prev];
+                    updated[updated.length - 1] = aiMessageRef.current;
+                    return updated;
+                  }
+                });
+              }
+            } else if (msg.type === "error") {
+              console.error("LLM Error:", msg.data);
+            }
+          } catch (err: unknown) {
+            console.warn(
+              "Non-JSON message:",
+              err instanceof Error ? event.data : err
             );
           }
-        };
+        } else {
+          console.log(messages[messages.length - 1]);
+          console.log("Received binary", event.data.byteLength);
+          const blob = new Blob([event.data], { type: "audio/mpeg" });
+          const audioUrl = URL.createObjectURL(blob);
 
-        audioRef.current.onerror = (error: unknown) => {
-          console.error(
-            "Audio playback error:",
-            error instanceof Error ? error.message : error
-          );
-          if (!streaming) {
-            SpeechRecognition.startListening({ continuous: true }).catch(
-              (err) => console.error("Error starting recognition:", err)
-            );
-          }
-        };
-
-        // Play the audio
-        audioRef.current
-          .play()
-          .catch((err: unknown) =>
+          // Stop speech recognition before playing audio
+          SpeechRecognition.stopListening().catch((err: unknown) =>
             console.error(
-              "Audio play failed:",
+              "Error stopping recognition:",
               err instanceof Error ? err.message : err
             )
           );
+
+          // Initialize or update audio element
+          if (!audioRef.current) {
+            audioRef.current = new Audio(audioUrl);
+          } else {
+            audioRef.current.src = audioUrl;
+          }
+
+          // Clean up previous event listeners to avoid duplicates
+          audioRef.current.onended = null;
+          audioRef.current.onerror = null;
+
+          // Set up new event listeners
+          audioRef.current.onended = () => {
+            console.log("Audio playback finished");
+            if (!streaming) {
+              SpeechRecognition.startListening({ continuous: true }).catch(
+                (err: unknown) =>
+                  console.error(
+                    "Error starting recognition:",
+                    err instanceof Error ? err.message : err
+                  )
+              );
+            }
+          };
+
+          audioRef.current.onerror = (error: unknown) => {
+            console.error(
+              "Audio playback error:",
+              error instanceof Error ? error.message : error
+            );
+            if (!streaming) {
+              SpeechRecognition.startListening({ continuous: true }).catch(
+                (err) => console.error("Error starting recognition:", err)
+              );
+            }
+          };
+
+          // Play the audio
+          audioRef.current
+            .play()
+            .catch((err: unknown) =>
+              console.error(
+                "Audio play failed:",
+                err instanceof Error ? err.message : err
+              )
+            );
+        }
+      };
+    };
+
+    connect();
+
+    return () => {
+      clearTimeout(reconnectTimer);
+      if (socketRef.current) {
+        socketRef.current.close();
+
       }
     };
-
-    socket.onclose = () => {
-      setStreaming(false);
-      setPlaying(false);
-      console.log("🔌 Socket closed");
-      SpeechRecognition.stopListening();
-      // router.push("/interview");
-    };
-
-    return () => socket.close();
   }, [sessionId]);
+
   useEffect(() => {
     if (!browserSupportsSpeechRecognition) return;
 
@@ -231,6 +260,10 @@ export default function ChatPage() {
         console.log("👋 Disconnected by user");
         setMessages([]);
         setPlaying(false);
+        resetTranscript();
+
+        audioRef.current?.pause();
+        SpeechRecognition.stopListening();
         router.push("/interview"); // Redirect after cleanup
       }, 100); // give time for ws.onclose
     }
@@ -251,6 +284,8 @@ export default function ChatPage() {
 
     return () => clearTimeout(timer);
   }, [transcript, streaming, input]);
+
+
   return (
     <div className="grid grid-cols-12 gap-4 min-h-screen p-4 overflow-y-auto hide-scrollbar">
       {/* Sidebar */}
