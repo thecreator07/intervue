@@ -22,6 +22,8 @@ export default function ChatPage() {
   const router = useRouter();
   const [lastSpeechTime, setLastSpeechTime] = useState<number>(0);
   const sendTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [connected, setConnected] = useState(false);
+
   const {
     transcript,
     resetTranscript,
@@ -35,34 +37,39 @@ export default function ChatPage() {
   }, [browserSupportsSpeechRecognition]);
   useEffect(() => {
     if (!transcript) return;
-    
+
     const now = Date.now();
     setLastSpeechTime(now);
-    
+
     if (sendTimeoutRef.current) {
-        clearTimeout(sendTimeoutRef.current);
+      clearTimeout(sendTimeoutRef.current);
     }
-    
+
     // Only update input if not streaming and no manual input
     if (!streaming && !input) {
-        setInput(transcript);
+      setInput(transcript);
     }
-    
-    sendTimeoutRef.current = setTimeout(() => {
-        if (!streaming && transcript.trim()) {
-            handleSend();
-        }
-    }, 3000);
-    
-    return () => {
-        if (sendTimeoutRef.current) {
-            clearTimeout(sendTimeoutRef.current);
-        }
-    };
-}, [transcript, streaming]);
 
+    sendTimeoutRef.current = setTimeout(() => {
+      if (!streaming && transcript.trim()) {
+        handleSend();
+      }
+    }, 3000);
+
+    return () => {
+      if (sendTimeoutRef.current) {
+        clearTimeout(sendTimeoutRef.current);
+      }
+    };
+  }, [transcript, streaming]);
 
   useEffect(() => {
+    if (connected) return; // prevent double connect
+    setConnected(true);
+
+    const socket = connectSocket(sessionId);
+    socketRef.current = socket; 
+
     let reconnectAttempts = 0;
     const maxReconnectAttempts = 5;
     let reconnectTimer: NodeJS.Timeout;
@@ -78,7 +85,7 @@ export default function ChatPage() {
       };
 
       socket.onclose = () => {
-        setStreaming(false);
+        setStreaming(false);  
         if (reconnectAttempts < maxReconnectAttempts) {
           reconnectTimer = setTimeout(() => {
             reconnectAttempts++;
@@ -202,7 +209,7 @@ export default function ChatPage() {
       clearTimeout(reconnectTimer);
       if (socketRef.current) {
         socketRef.current.close();
-
+        setConnected(false);
       }
     };
   }, [sessionId]);
@@ -252,21 +259,24 @@ export default function ChatPage() {
 
   const handleDisconnect = () => {
     if (socketRef.current) {
-      socketRef.current.close(); // Triggers `onclose` on server
-      setTimeout(() => {
-        socketRef.current = null;
-        setStreaming(false);
-        setPlaying(false);
-        console.log("👋 Disconnected by user");
-        setMessages([]);
-        setPlaying(false);
-        resetTranscript();
-
-        audioRef.current?.pause();
-        SpeechRecognition.stopListening();
-        router.push("/interview"); // Redirect after cleanup
-      }, 100); // give time for ws.onclose
+      socketRef.current.close();
+      socketRef.current = null;
     }
+
+    // Stop everything before redirect
+    audioRef.current?.pause();
+    audioRef.current = null;
+
+    SpeechRecognition.stopListening();
+    resetTranscript();
+    setMessages([]);
+    setStreaming(false);
+    setPlaying(false);
+
+    // Push route AFTER cleanup
+    setTimeout(() => {
+      router.push("/interview");
+    }, 50);
   };
 
   useEffect(() => {
@@ -277,10 +287,9 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (transcript && !streaming && transcript !== input) {
-        setInput(transcript);
-      }
+      setInput(transcript);
+    }
   }, [transcript, streaming, input]);
-
 
   return (
     <div className="grid grid-cols-12 gap-4 min-h-screen p-4 overflow-y-auto hide-scrollbar">

@@ -12,7 +12,6 @@ import { authOptions } from "../auth/[...nextauth]/options";
 export async function POST(req: NextRequest) {
     await dbConnect();
 
-
     try {
         const { sessionId, conversation } = await req.json();
 
